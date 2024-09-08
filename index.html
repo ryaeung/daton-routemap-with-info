@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鐵路線路表格生成器</title>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #e6f3ff;
+            color: #333;
+        }
+        .interface {
+            display: none;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active {
+            display: block;
+        }
+        input, select {
+            margin: 5px 0;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin: 10px 0;
+            padding: 10px 15px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        #stationList {
+            margin-top: 20px;
+        }
+        .station-item {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        #explanation {
+            font-style: italic;
+            color: #666;
+        }
+        #generatedCode {
+            white-space: pre-wrap;
+            background-color: #f0f0f0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .error-message {
+            color: #ff0000;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .input-error {
+            border-color: #ff0000;
+        }
+        .station-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .station-table td {
+            padding: 5px;
+        }
+        .station-table td:first-child {
+            width: 100px;
+            font-weight: bold;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>鐵路線路表格生成器</h1>
+
+    <div id="interface1" class="interface active">
+        <h2>介面 1: 基本設定</h2>
+        <label for="stationCount">車站數量：</label>
+        <input type="range" id="stationCount" min="1" max="20" value="3">
+        <span id="stationCountValue">3</span><br>
+        <label for="lineColor">線路顏色：</label>
+        <input type="text" id="lineColor" placeholder="#000000">
+        <button onclick="validateAndProceed()">下一步</button>
+        <div id="error1" class="error-message"></div>
+    </div>
+
+    <div id="interface2" class="interface">
+        <h2>介面 2: 車站資訊</h2>
+        <div id="stationList"></div>
+        <div class="button-group">
+            <button onclick="addStation()">添加車站</button>
+            <button onclick="generateTable()">生成表格</button>
+        </div>
+        <p id="explanation">如果某項不適用，請填寫「無」</p>
+        <div id="error2" class="error-message"></div>
+    </div>
+
+    <div id="interface3" class="interface">
+        <h2>介面 3: 生成的維基表格代碼</h2>
+        <pre id="generatedCode"></pre>
+    </div>
+
+    <script>
+        let stationCount = 3;
+        let lineColor = "#000000";
+        let stations = [];
+
+        const transferLines = ["悅森線", "郊地線", "秋凌野線", "達通南支線", "南端線", "其他"];
+
+        document.getElementById('stationCount').addEventListener('input', function() {
+            stationCount = this.value;
+            document.getElementById('stationCountValue').textContent = stationCount;
+        });
+
+        function validateAndProceed() {
+            lineColor = document.getElementById('lineColor').value;
+            if (!/^#[0-9A-Fa-f]{6}$/.test(lineColor)) {
+                showError('error1', "請輸入有效的十六進制顏色代碼");
+                document.getElementById('lineColor').classList.add('input-error');
+                return;
+            }
+            document.getElementById('interface1').classList.remove('active');
+            document.getElementById('interface2').classList.add('active');
+            updateStationList();
+        }
+
+        function addStation() {
+            if (stations.length >= stationCount) {
+                showError('error2', "已達到最大車站數量");
+                return;
+            }
+            stations.push({
+                name: "",
+                abbreviation: "",
+                northPlatform: "",
+                southPlatform: "",
+                transferLine: "",
+                openingDate: "",
+                platformColor: ""
+            });
+            updateStationList();
+        }
+
+        function updateStationList() {
+            const stationList = document.getElementById('stationList');
+            stationList.innerHTML = "";
+            stations.forEach((station, index) => {
+                const stationDiv = document.createElement('div');
+                stationDiv.className = 'station-item';
+                stationDiv.innerHTML = `
+                    <h3>車站 ${index + 1}</h3>
+                    <table class="station-table">
+                        <tr>
+                            <td>車站名稱</td>
+                            <td><input type="text" placeholder="車站名稱" value="${station.name}" onchange="updateStation(${index}, 'name', this.value)"></td>
+                        </tr>
+                        <tr>
+                            <td>英文縮寫</td>
+                            <td><input type="text" placeholder="英文縮寫" value="${station.abbreviation}" onchange="updateStation(${index}, 'abbreviation', this.value)"></td>
+                        </tr>
+                        <tr>
+                            <td>北行月台</td>
+                            <td><input type="text" placeholder="北行月台" value="${station.northPlatform}" onchange="updateStation(${index}, 'northPlatform', this.value)"></td>
+                        </tr>
+                        <tr>
+                            <td>南行月台</td>
+                            <td><input type="text" placeholder="南行月台" value="${station.southPlatform}" onchange="updateStation(${index}, 'southPlatform', this.value)"></td>
+                        </tr>
+                        <tr>
+                            <td>轉乘線路</td>
+                            <td>
+                                <select onchange="updateTransferLine(${index}, this.value)">
+                                    <option value="">選擇轉乘線路</option>
+                                    ${transferLines.map(line => `<option value="${line}" ${station.transferLine === line ? 'selected' : ''}>${line}</option>`).join('')}
+                                    <option value="無" ${station.transferLine === '無' ? 'selected' : ''}>無</option>
+                                </select>
+                                ${station.transferLine === '其他' ? `<input type="text" placeholder="請輸入其他線路" value="${station.customTransferLine || ''}" onchange="updateStation(${index}, 'customTransferLine', this.value)">` : ''}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>啟用時間</td>
+                            <td><input type="text" placeholder="啟用時間（年/月）" value="${station.openingDate}" onchange="updateStation(${index}, 'openingDate', this.value)"></td>
+                        </tr>
+                        <tr>
+                            <td>月台配色</td>
+                            <td><input type="text" placeholder="月台配色" value="${station.platformColor}" onchange="updateStation(${index}, 'platformColor', this.value)"></td>
+                        </tr>
+                    </table>
+                `;
+                stationList.appendChild(stationDiv);
+            });
+        }
+
+        function updateStation(index, field, value) {
+            stations[index][field] = value;
+        }
+
+        function updateTransferLine(index, value) {
+            stations[index].transferLine = value;
+            if (value === '其他') {
+                stations[index].customTransferLine = '';
+            }
+            updateStationList();
+        }
+
+        function generateTable() {
+            if (stations.length !== parseInt(stationCount)) {
+                showError('error2', "請填寫所有車站資訊");
+                return;
+            }
+            if (!stations.every(station => 
+                station.name && station.abbreviation && station.northPlatform && 
+                station.southPlatform && station.transferLine && station.openingDate && 
+                station.platformColor && (station.transferLine !== '其他' || station.customTransferLine))) {
+                showError('error2', "請填寫所有車站的完整資訊");
+                return;
+            }
+            
+            let tableCode = `{| class="wikitable"
+|-
+! 路線圖 !! 車站名稱 !! 英文縮寫 !! 北行月台 !! 南行月台 !! 轉乘線路 !! 啟用時間（年/月） !! 月台配色
+|-
+| rowspan="${stationCount}" style="width: 30px; position: relative;" |
+<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 10px; background-color: ${lineColor}; transform: translateX(-50%); border-radius: 5px;"></div>
+${stations.map((_, index) => `<div style="position: absolute; left: 50%; top: ${(index + 0.5) * 100 / stationCount}%; width: 8px; height: 8px; background-color: white; border: 2px solid ${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>`).join('\n')}
+`;
+
+            stations.forEach((station, index) => {
+                if (index > 0) tableCode += "|-\n";
+                let transferLineText = station.transferLine === '其他' ? station.customTransferLine : station.transferLine;
+                tableCode += `| [[${station.name}]] || ${station.abbreviation} || ${station.northPlatform} || ${station.southPlatform} || ${transferLineText !== '無' ? `[[${transferLineText}]]` : '無'} || ${station.openingDate} || ${station.platformColor}\n`;
+            });
+
+            tableCode += "|}";
+
+            document.getElementById('generatedCode').textContent = tableCode;
+            document.getElementById('interface2').classList.remove('active');
+            document.getElementById('interface3').classList.add('active');
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
