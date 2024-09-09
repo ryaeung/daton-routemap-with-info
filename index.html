@@ -256,26 +256,16 @@
         }
 
         function generateWikiTable() {
-        const lineName = document.getElementById('lineName').value;
-        const lineColor = document.getElementById('lineColor').value;
-        let wikiCode = `{| class="wikitable" style="text-align:center;"\n`;
-        wikiCode += `|+ style="background:#${lineColor}; color:white;" | ${lineName}\n`;
-        wikiCode += `! 路線圖 !! 車站名稱 !! 英文縮寫 !! 北行月台 !! 南行月台 !! 轉乘線路 !! 啟用時間 !! 月台配色\n`;
+            const lineName = document.getElementById('lineName').value;
+            const lineColor = document.getElementById('lineColor').value;
+            let wikiCode = `{| class="wikitable" style="text-align:center;"\n`;
+            wikiCode += `|+ style="background:#${lineColor}; color:white;" | ${lineName}\n`;
+            wikiCode += `! 路線圖 !! 車站名稱 !! 英文縮寫 !! 北行月台 !! 南行月台 !! 轉乘線路 !! 啟用時間 !! 月台配色\n`;
 
-        stations.forEach((station, index) => {
-            wikiCode += `|-\n`;
-            wikiCode += `| rowspan="2" style="width: 30px; position: relative;" |\n`;
-            wikiCode += `<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 10px; background-color: #${lineColor}; transform: translateX(-50%); border-radius: 5px;"></div>\n`;
-            wikiCode += `<div style="position: absolute; left: 50%; top: 25%; width: 8px; height: 8px; background-color: white; border: 2px solid #${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>\n`;
-            wikiCode += `<div style="position: absolute; left: 50%; top: 75%; width: 8px; height: 8px; background-color: white; border: 2px solid #${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>\n`;
-            wikiCode += `| [[${station.name}站|${station.name}]] || ${station.abbr} || ${station.northPlatform} || ${station.southPlatform} || ${generateTransferLinks(station.transferLines)} || ${station.openYear} 年 ${station.openMonth} 月 || ${station.platformColor}\n`;
-            wikiCode += `|-\n`;
-            wikiCode += `| ${index + 1}\n`;
-        });
-
-        wikiCode += `|}`;
-        document.getElementById('wikiOutput').value = wikiCode;
-    }
+            stations.forEach((station, index) => {
+                wikiCode += `|-\n`;
+                wikiCode += `| ${index + 1} || [[${station.name}站|${station.name}]] || ${station.abbr} || ${station.northPlatform} || ${station.southPlatform} || ${generateTransferLinks(station.transferLines)} || ${station.openYear} 年 ${station.openMonth} 月 || ${station.platformColor}\n`;
+            });
 
             wikiCode += `|}`;
             document.getElementById('wikiOutput').value = wikiCode;
