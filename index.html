@@ -3,270 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鐵路線路表格生成器</title>
+    <title>達通城 PLR 線路表格生成器</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap');
+
         body {
-            font-family: 'Noto Sans TC', Arial, sans-serif;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #e6f3ff;
-            color: #333;
         }
-        .interface {
-            display: none;
-            margin-bottom: 20px;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        h1 {
+            text-align: center;
+            color: #4a4a4a;
         }
-        .active {
-            display: block;
-        }
-        input, select {
-            margin: 5px 0;
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            margin: 10px 0;
-            padding: 10px 15px;
-            background-color: #4a90e2;
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
             color: white;
-            border: none;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+
+        .steps {
+            display: flex;
+        }
+
+        .step {
+            margin-right: 10px;
+            opacity: 0.5;
+        }
+
+        .step.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .github-link {
+            color: white;
+            text-decoration: none;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+
+        .step-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
             border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            border-radius: 4px;
         }
+
         button:hover {
-            background-color: #357abd;
+            background-color: #45a049;
         }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
         #stationList {
             margin-top: 20px;
         }
+
         .station-item {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
             border-radius: 4px;
         }
-        #explanation {
-            font-style: italic;
-            color: #666;
-        }
-        #generatedCode {
-            white-space: pre-wrap;
-            background-color: #f0f0f0;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .error-message {
-            color: #ff0000;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .input-error {
-            border-color: #ff0000;
-        }
-        .station-table {
+
+        #wikiOutput {
             width: 100%;
-            border-collapse: collapse;
-        }
-        .station-table td {
-            padding: 5px;
-        }
-        .station-table td:first-child {
-            width: 100px;
-            font-weight: bold;
-        }
-        .button-group {
-            display: flex;
-            justify-content: space-between;
+            height: 300px;
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>鐵路線路表格生成器</h1>
-
-    <div id="interface1" class="interface active">
-        <h2>介面 1: 基本設定</h2>
-        <label for="stationCount">車站數量：</label>
-        <input type="range" id="stationCount" min="1" max="20" value="3">
-        <span id="stationCountValue">3</span><br>
-        <label for="lineColor">線路顏色：</label>
-        <input type="text" id="lineColor" placeholder="#000000">
-        <button onclick="validateAndProceed()">下一步</button>
-        <div id="error1" class="error-message"></div>
-    </div>
-
-    <div id="interface2" class="interface">
-        <h2>介面 2: 車站資訊</h2>
-        <div id="stationList"></div>
-        <div class="button-group">
-            <button onclick="addStation()">添加車站</button>
-            <button onclick="generateTable()">生成表格</button>
+    <div class="status-bar">
+        <div class="steps">
+            <span class="step active">步驟 1</span>
+            <span class="step">步驟 2</span>
+            <span class="step">步驟 3</span>
         </div>
-        <p id="explanation">如果某項不適用，請填寫「無」</p>
-        <div id="error2" class="error-message"></div>
+        <a href="https://github.com/ryaeung/daton-routemap-with-info" target="_blank" class="github-link">GitHub 儲存庫</a>
     </div>
 
-    <div id="interface3" class="interface">
-        <h2>介面 3: 生成的維基表格代碼</h2>
-        <pre id="generatedCode"></pre>
+    <div class="container">
+        <h1>達通城 PLR 線路表格生成器</h1>
+
+        <div id="step1" class="step-content">
+            <h2>步驟 1：線路資訊</h2>
+            <input type="text" id="lineName" placeholder="線路名稱">
+            <input type="text" id="lineColor" placeholder="線路顏色 (6位十六進制代碼，不含#)">
+            <input type="color" id="colorPicker" value="#000000">
+            <button onclick="nextStep()">下一步</button>
+            <p class="error" id="step1Error"></p>
+        </div>
+
+        <div id="step2" class="step-content" style="display: none;">
+            <h2>步驟 2：車站資訊</h2>
+            <div id="stationForm">
+                <input type="text" id="stationName" placeholder="車站名稱">
+                <input type="text" id="stationAbbr" placeholder="英文縮寫">
+                <input type="text" id="northPlatform" placeholder="北行月台">
+                <input type="text" id="southPlatform" placeholder="南行月台">
+                <input type="text" id="transferLines" placeholder="轉乘線路">
+                <div id="presetLines"></div>
+                <input type="number" id="openYear" placeholder="啟用年份">
+                <input type="number" id="openMonth" placeholder="啟用月份">
+                <input type="text" id="platformColor" placeholder="月台配色">
+            </div>
+            <button onclick="addStation()">添加車站</button>
+            <div id="stationList"></div>
+            <button onclick="prevStep()">返回</button>
+            <button onclick="nextStep()">下一步</button>
+            <p class="error" id="step2Error"></p>
+            <p>如果任何欄位不適用，請填寫「無」。</p>
+        </div>
+
+        <div id="step3" class="step-content" style="display: none;">
+            <h2>步驟 3：生成表格代碼</h2>
+            <p>下列為生成好的Wikitable原始碼，直接複製進原始碼編輯器便可。</p>
+            <textarea id="wikiOutput" readonly></textarea>
+            <button onclick="prevStep()">返回</button>
+            <button onclick="copyToClipboard()">複製</button>
+            <button onclick="resetAll()">重新製作</button>
+            <button onclick="openWikiTest()" style="background-color: #2196F3;">去維基測試！</button>
+            <p id="copyMessage" style="color: green; display: none;">已複製到剪貼板！</p>
+            <p id="wikiTestMessage" style="color: green; display: none;">已於新分頁開啟維基測試頁！</p>
+        </div>
     </div>
 
     <script>
-        let stationCount = 3;
-        let lineColor = "#000000";
+        let currentStep = 1;
         let stations = [];
+        const presetLines = ['悅森線', '郊地線', '秋凌野線', '達通南支線', '南端線', '達通特急線'];
 
-        const transferLines = ["悅森線", "郊地線", "秋凌野線", "達通南支線", "南端線", "其他"];
+        function updateStatusBar() {
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.toggle('active', index + 1 === currentStep);
+            });
+        }
 
-        document.getElementById('stationCount').addEventListener('input', function() {
-            stationCount = this.value;
-            document.getElementById('stationCountValue').textContent = stationCount;
-        });
-
-        function validateAndProceed() {
-            lineColor = document.getElementById('lineColor').value;
-            if (!/^#[0-9A-Fa-f]{6}$/.test(lineColor)) {
-                showError('error1', "請輸入有效的十六進制顏色代碼");
-                document.getElementById('lineColor').classList.add('input-error');
-                return;
+        function nextStep() {
+            if (currentStep === 1) {
+                const lineName = document.getElementById('lineName').value;
+                const lineColor = document.getElementById('lineColor').value;
+                if (!lineName || !lineColor || !/^[0-9A-Fa-f]{6}$/.test(lineColor)) {
+                    document.getElementById('step1Error').textContent = '請填寫有效的線路名稱和顏色代碼。';
+                    return;
+                }
+                document.getElementById('step1Error').textContent = '';
+            } else if (currentStep === 2) {
+                if (stations.length === 0) {
+                    document.getElementById('step2Error').textContent = '請至少添加一個車站。';
+                    return;
+                }
+                document.getElementById('step2Error').textContent = '';
+                generateWikiTable();
             }
-            document.getElementById('interface1').classList.remove('active');
-            document.getElementById('interface2').classList.add('active');
-            updateStationList();
+
+            currentStep++;
+            updateStatusBar();
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`step${i}`).style.display = i === currentStep ? 'block' : 'none';
+            }
+        }
+
+        function prevStep() {
+            currentStep--;
+            updateStatusBar();
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`step${i}`).style.display = i === currentStep ? 'block' : 'none';
+            }
         }
 
         function addStation() {
-            if (stations.length >= stationCount) {
-                showError('error2', "已達到最大車站數量");
+            const station = {
+                name: document.getElementById('stationName').value,
+                abbr: document.getElementById('stationAbbr').value,
+                northPlatform: document.getElementById('northPlatform').value,
+                southPlatform: document.getElementById('southPlatform').value,
+                transferLines: document.getElementById('transferLines').value,
+                openYear: document.getElementById('openYear').value,
+                openMonth: document.getElementById('openMonth').value,
+                platformColor: document.getElementById('platformColor').value
+            };
+
+            if (Object.values(station).some(value => !value)) {
+                document.getElementById('step2Error').textContent = '請填寫所有車站資訊。';
                 return;
             }
-            stations.push({
-                name: "",
-                abbreviation: "",
-                northPlatform: "",
-                southPlatform: "",
-                transferLine: "",
-                openingDate: "",
-                platformColor: ""
-            });
+
+            stations.push(station);
             updateStationList();
+            clearStationForm();
+            document.getElementById('step2Error').textContent = '';
         }
 
         function updateStationList() {
-            const stationList = document.getElementById('stationList');
-            stationList.innerHTML = "";
+            const list = document.getElementById('stationList');
+            list.innerHTML = '';
             stations.forEach((station, index) => {
-                const stationDiv = document.createElement('div');
-                stationDiv.className = 'station-item';
-                stationDiv.innerHTML = `
-                    <h3>車站 ${index + 1}</h3>
-                    <table class="station-table">
-                        <tr>
-                            <td>車站名稱</td>
-                            <td><input type="text" placeholder="車站名稱" value="${station.name}" onchange="updateStation(${index}, 'name', this.value)"></td>
-                        </tr>
-                        <tr>
-                            <td>英文縮寫</td>
-                            <td><input type="text" placeholder="英文縮寫" value="${station.abbreviation}" onchange="updateStation(${index}, 'abbreviation', this.value)"></td>
-                        </tr>
-                        <tr>
-                            <td>北行月台</td>
-                            <td><input type="text" placeholder="北行月台" value="${station.northPlatform}" onchange="updateStation(${index}, 'northPlatform', this.value)"></td>
-                        </tr>
-                        <tr>
-                            <td>南行月台</td>
-                            <td><input type="text" placeholder="南行月台" value="${station.southPlatform}" onchange="updateStation(${index}, 'southPlatform', this.value)"></td>
-                        </tr>
-                        <tr>
-                            <td>轉乘線路</td>
-                            <td>
-                                <select onchange="updateTransferLine(${index}, this.value)">
-                                    <option value="">選擇轉乘線路</option>
-                                    ${transferLines.map(line => `<option value="${line}" ${station.transferLine === line ? 'selected' : ''}>${line}</option>`).join('')}
-                                    <option value="無" ${station.transferLine === '無' ? 'selected' : ''}>無</option>
-                                </select>
-                                ${station.transferLine === '其他' ? `<input type="text" placeholder="請輸入其他線路" value="${station.customTransferLine || ''}" onchange="updateStation(${index}, 'customTransferLine', this.value)">` : ''}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>啟用時間</td>
-                            <td><input type="text" placeholder="啟用時間（年/月）" value="${station.openingDate}" onchange="updateStation(${index}, 'openingDate', this.value)"></td>
-                        </tr>
-                        <tr>
-                            <td>月台配色</td>
-                            <td><input type="text" placeholder="月台配色" value="${station.platformColor}" onchange="updateStation(${index}, 'platformColor', this.value)"></td>
-                        </tr>
-                    </table>
-                `;
-                stationList.appendChild(stationDiv);
+                const item = document.createElement('div');
+                item.className = 'station-item';
+                item.textContent = `${index + 1}. ${station.name} (${station.abbr})`;
+                list.appendChild(item);
             });
         }
 
-        function updateStation(index, field, value) {
-            stations[index][field] = value;
-        }
-
-        function updateTransferLine(index, value) {
-            stations[index].transferLine = value;
-            if (value === '其他') {
-                stations[index].customTransferLine = '';
-            }
-            updateStationList();
-        }
-
-        function generateTable() {
-            if (stations.length !== parseInt(stationCount)) {
-                showError('error2', "請填寫所有車站資訊");
-                return;
-            }
-            if (!stations.every(station => 
-                station.name && station.abbreviation && station.northPlatform && 
-                station.southPlatform && station.transferLine && station.openingDate && 
-                station.platformColor && (station.transferLine !== '其他' || station.customTransferLine))) {
-                showError('error2', "請填寫所有車站的完整資訊");
-                return;
-            }
-            
-            let tableCode = `{| class="wikitable"
-|-
-! 路線圖 !! 車站名稱 !! 英文縮寫 !! 北行月台 !! 南行月台 !! 轉乘線路 !! 啟用時間（年/月） !! 月台配色
-|-
-| rowspan="${stationCount}" style="width: 30px; position: relative;" |
-<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 10px; background-color: ${lineColor}; transform: translateX(-50%); border-radius: 5px;"></div>
-${stations.map((_, index) => `<div style="position: absolute; left: 50%; top: ${(index + 0.5) * 100 / stationCount}%; width: 8px; height: 8px; background-color: white; border: 2px solid ${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>`).join('\n')}
-`;
-
-            stations.forEach((station, index) => {
-                if (index > 0) tableCode += "|-\n";
-                let transferLineText = station.transferLine === '其他' ? station.customTransferLine : station.transferLine;
-                tableCode += `| [[${station.name}]] || ${station.abbreviation} || ${station.northPlatform} || ${station.southPlatform} || ${transferLineText !== '無' ? `[[${transferLineText}]]` : '無'} || ${station.openingDate} || ${station.platformColor}\n`;
+        function clearStationForm() {
+            ['stationName', 'stationAbbr', 'northPlatform', 'southPlatform', 'transferLines', 'openYear', 'openMonth', 'platformColor'].forEach(id => {
+                document.getElementById(id).value = '';
             });
-
-            tableCode += "|}";
-
-            document.getElementById('generatedCode').textContent = tableCode;
-            document.getElementById('interface2').classList.remove('active');
-            document.getElementById('interface3').classList.add('active');
         }
 
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
+        function generateWikiTable() {
+        const lineName = document.getElementById('lineName').value;
+        const lineColor = document.getElementById('lineColor').value;
+        let wikiCode = `{| class="wikitable" style="text-align:center;"\n`;
+        wikiCode += `|+ style="background:#${lineColor}; color:white;" | ${lineName}\n`;
+        wikiCode += `! 路線圖 !! 車站名稱 !! 英文縮寫 !! 北行月台 !! 南行月台 !! 轉乘線路 !! 啟用時間 !! 月台配色\n`;
+
+        stations.forEach((station, index) => {
+            wikiCode += `|-\n`;
+            wikiCode += `| rowspan="2" style="width: 30px; position: relative;" |\n`;
+            wikiCode += `<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 10px; background-color: #${lineColor}; transform: translateX(-50%); border-radius: 5px;"></div>\n`;
+            wikiCode += `<div style="position: absolute; left: 50%; top: 25%; width: 8px; height: 8px; background-color: white; border: 2px solid #${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>\n`;
+            wikiCode += `<div style="position: absolute; left: 50%; top: 75%; width: 8px; height: 8px; background-color: white; border: 2px solid #${lineColor}; border-radius: 50%; transform: translate(-50%, -50%);"></div>\n`;
+            wikiCode += `| [[${station.name}站|${station.name}]] || ${station.abbr} || ${station.northPlatform} || ${station.southPlatform} || ${generateTransferLinks(station.transferLines)} || ${station.openYear} 年 ${station.openMonth} 月 || ${station.platformColor}\n`;
+            wikiCode += `|-\n`;
+            wikiCode += `| ${index + 1}\n`;
+        });
+
+        wikiCode += `|}`;
+        document.getElementById('wikiOutput').value = wikiCode;
+    }
+
+            wikiCode += `|}`;
+            document.getElementById('wikiOutput').value = wikiCode;
+        }
+
+        function generateTransferLinks(transferLines) {
+            return transferLines.split(',').map(line => `[[${line.trim()}]]`).join('、');
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('wikiOutput');
+            output.select();
+            document.execCommand('copy');
+            document.getElementById('copyMessage').style.display = 'block';
             setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
+                document.getElementById('copyMessage').style.display = 'none';
+            }, 3000);
         }
+
+        function resetAll() {
+            currentStep = 1;
+            stations = [];
+            updateStatusBar();
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`step${i}`).style.display = i === 1 ? 'block' : 'none';
+            }
+            document.getElementById('lineName').value = '';
+            document.getElementById('lineColor').value = '';
+            document.getElementById('colorPicker').value = '#000000';
+            clearStationForm();
+            document.getElementById('stationList').innerHTML = '';
+            document.getElementById('wikiOutput').value = '';
+        }
+
+        function openWikiTest() {
+            window.open('https://project-mansion.fandom.com/zh-hk/wiki/%E6%A8%A1%E6%9D%BF:TestStnChart', '_blank');
+            document.getElementById('wikiTestMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('wikiTestMessage').style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize preset lines buttons
+        window.onload = function() {
+            const presetLinesDiv = document.getElementById('presetLines');
+            presetLines.forEach(line => {
+                const button = document.createElement('button');
+                button.textContent = line;
+                button.onclick = function() {
+                    const transferInput = document.getElementById('transferLines');
+                    transferInput.value += (transferInput.value ? ', ' : '') + line;
+                };
+                presetLinesDiv.appendChild(button);
+            });
+
+            // Sync color picker with hex input
+            document.getElementById('colorPicker').addEventListener('input', function(e) {
+                document.getElementById('lineColor').value = e.target.value.substring(1);
+            });
+
+            document.getElementById('lineColor').addEventListener('input', function(e) {
+                if (/^[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('colorPicker').value = '#' + e.target.value;
+                }
+            });
+        };
     </script>
 </body>
 </html>
